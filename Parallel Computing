@@ -1,0 +1,54 @@
+# here are some parallel computing programming that show you how to use "Parallel" Package in R
+
+isprime <- function(x){
+  if(x<2)
+    return(FALSE)
+  else{
+    i=2
+    while(i*i<=x){
+      if(x%%i==0)
+        {return(FALSE)}
+      else  
+      {i=i+1}
+    }
+    return(x)
+  }
+}
+
+
+library(parallel)
+system.time({
+  x <- seq(1,10^5,1)
+  cl <- makeCluster(4)
+  results <- parLapply(cl,x,isprime)
+  res.df <- do.call('rbind',results)
+  stopCluster(cl)
+})
+
+# above are the parallel computing
+# below we only use one CPU to process the data #
+
+
+system.time({x=sapply(seq(1,10^5,1),isprime)})
+
+
+library(foreach)
+install.packages("doParallel")
+library(doParallel)
+
+system.time({
+  cl <- makeCluster(4)
+  registerDoParallel(cl)
+  x <- foreach(x=1:10^5, .combine='rbind') %dopar% isprime(x)
+  stopCluster(cl)
+  }
+)
+
+# local memory, use RAM to increse the efficiency of CPU
+install.packages("memoise")
+library(memoise)
+fun <- memoise(isprime)
+system.time(sapply(1:10^5, fun))
+
+
+
