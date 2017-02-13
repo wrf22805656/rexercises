@@ -1,0 +1,319 @@
+##### Coping with Loss: A Family Bereavement Initiative for Adolescent Girls in the Free States, South Africa #####
+
+
+############################################ Part one, Step one #################################################
+### Reset the working environment
+getwd()
+setwd("C:/Users/WRF/Desktop/South Africa Plan/")
+
+### Read the raw data into R and check the dimensions
+CWL_rawdata <- read.csv("coping_with_loss.csv", header=TRUE)
+CWL_dimentions <- dim(CWL_rawdata)
+print(CWL_dimentions)  # we can see that totally 774 rows and 374 columns
+
+
+##### Statistical Data Analysis #####
+# Step one: Extracting outcomes with their baseline and post-treatment ##
+Extract_base_n_post <-CWL_rawdata[c("youth_id", "school_code","tx", "completer", "a_yr_since","baseline","followup", "base_igts", "a_igts", "base_icg", "a_icg", "base_dep_scr", "a_dep_score", "base_depressed", "a_depressed", "base_bpm","cg_bpm","base_bpm_int", "cg_bpm_int","base_difficult","a_difficult")]
+Data_base_n_post <- Extract_base_n_post[which(Extract_base_n_post$a_yr_since!="NA"),]
+
+
+# check dimensions how many subjects we have so far
+dim(Data_base_n_post)   # dimension (764,21) - which means, totally we have 382 participants
+
+
+# check what variables have missing data and how many NA there.
+sapply(Data_base_n_post, function(x) sum(length(which(is.na(x)))))
+colnames(Data_base_n_post)[colSums(is.na(Data_base_n_post))>0]
+# we can see that {"base_bpm":12, "cg_bpm":11, "base_bpm_int":14, "cg_bpm_int":12}
+
+
+# multiple imputation
+library(mi)
+
+## Identify variables' class
+sub_data_for_imputation <- Data_base_n_post[c("youth_id", "tx", "baseline", "followup", "base_bpm", "cg_bpm", "base_bpm_int", "cg_bpm_int")]
+missing_data_frame <- missing_data.frame(sub_data_for_imputation)
+summary(missing_data_f)
+hist(missing_data_f)
+image(missing_data_f)
+
+##customization of the conditional model is as default, we do not need to change
+mdf <- change(missing_data_frame, y=c("base_bpm","cg_bpm","base_bpm_int","cg_bpm_int"), what="type", to="ordered-categorical")
+
+## multiple imputation 
+data_after_mi <- mi(mdf, n.iter=50, seed=1100)
+
+## diagnostic the results
+show(data_after_mi)
+summary(data_after_mi)
+
+# get complete data sets and extract the first imputed data set 
+if(!exists("imputations", env = .GlobalEnv)) {
+  imputations <- mi:::imputations # cached from example("mi-package")
+}
+complete_imputed_data_sets <- complete(data_after_mi, 5)
+
+data_imputed_set_one <- complete_imputed_data_sets[[1]]
+
+
+
+
+############################################ Part one, Step two #################################################
+## descriptive statistics
+##### in order to get the mean value and 95% confidence interval of mean
+
+# (1) Intrusive Grief Thoughts Scale (a_igts, base_igts)
+dim(Data_base_n_post)
+data_igts <- Data_base_n_post[c("youth_id","baseline", "tx", "base_igts", "a_igts")]
+data_igts_case_baseline <- data_igts[which(data_igts$tx==1 & data_igts$baseline==1),]
+data_igts_case_followup <- data_igts[which(data_igts$tx==1 & data_igts$baseline==0),]
+dim(data_igts_case_baseline)  # dimension is (193,5) which means 193 participants
+
+t.test(data_igts_case_followup$a_igts)
+t.test(data_igts_case_baseline$base_igts)
+
+
+
+# (2) Inventory of complicated grief scale (a_icg, base_icg)
+data_icg <- Data_base_n_post[c("youth_id","baseline", "tx", "base_icg", "a_icg")]
+data_icg_case_baseline <- data_icg[which(data_igts$tx==1 & data_igts$baseline==1),]
+data_icg_case_followup <- data_icg[which(data_igts$tx==1 & data_igts$baseline==0),]
+dim(data_icg_case_baseline)  # dimension is (193,5) which means 193 participants
+
+t.test(data_icg_case_followup$a_icg)
+t.test(data_icg_case_baseline$base_icg)
+
+
+
+
+# (3) Depression scale for children (base_dep_scr, a_dep_score, base_depressed, a_depressed)
+data_depression <- Data_base_n_post[c("youth_id","baseline", "tx", "base_dep_scr", "a_dep_score", "base_depressed", "a_depressed")]
+data_dep_scr_case_baseline <- data_depression[which(data_depression$tx==1 & data_depression$baseline==1),]
+data_dep_scr_case_followup <- data_depression[which(data_depression$tx==1 & data_depression$baseline==0),]
+dim(data_dep_scr_case_baseline)  # dimension is (193,5) which means 193 participants
+
+t.test(data_dep_scr_case_followup$a_dep_score)
+t.test(data_dep_scr_case_baseline$base_dep_scr)
+
+t.test(data_dep_scr_case_followup$a_depressed)
+t.test(data_dep_scr_case_baseline$base_depressed)
+
+
+
+
+# (4) Brief problem monitor (base_bpm, cg_bpm)
+data_bpm <- data_imputed_set_one[c("youth_id","baseline", "tx", "base_bpm", "cg_bpm")]
+data_bpm_case_baseline <- data_bpm[which(data_bpm$tx==1 & data_bpm$baseline==1),]
+data_bpm_case_followup <- data_bpm[which(data_bpm$tx==1 & data_bpm$baseline==0),]
+dim(data_bpm_case_baseline)  # dimension is (193,5) which means 193 participants
+
+cg_bpm <- as.numeric(data_bpm_case_followup$cg_bpm)-1
+t.test(cg_bpm)
+base_bpm <- as.numeric(data_bpm_case_baseline$base_bpm)-1
+t.test(base_bpm)
+
+
+# (5) Brief problem monitor - Internalizing behaviors sub-scale (base_bpm_int, cg_bpm_int)
+data_bpm_int <- data_imputed_set_one[c("youth_id","baseline", "tx", "base_bpm_int", "cg_bpm_int")]
+data_bpm_int_case_baseline <- data_bpm_int[which(data_bpm_int$tx==1 & data_bpm_int$baseline==1),]
+data_bpm_int_case_followup <- data_bpm_int[which(data_bpm_int$tx==1 & data_bpm_int$baseline==0),]
+dim(data_bpm_int_case_basegline)  # dimension is (193,5) which means 193 participants
+
+cg_bpm_int <- as.numeric(data_bpm_int_case_followup$cg_bpm_int)-1
+t.test(cg_bpm_int)
+base_bpm_int <- as.numeric(data_bpm_int_case_baseline$base_bpm_int)-1
+t.test(base_bpm_int)
+
+
+
+# (6) Impaired functioning due to grief (a_difficult, base_difficult)
+data_difficult <- Data_base_n_post[c("youth_id","baseline", "tx", "base_difficult", "a_difficult")]
+data_difficult_case_baseline <- data_difficult[which(data_difficult$tx==1 & data_difficult$baseline==1),]
+data_difficult_case_followup <- data_difficult[which(data_difficult$tx==1 & data_difficult$baseline==0),]
+dim(data_difficult_case_baseline)  # dimension is (193,5) which means 193 participants
+
+t.test(data_difficult_case_followup$a_difficult)
+t.test(data_difficult_case_baseline$base_difficult)
+
+
+
+
+
+############################################ Part one, Step three #################################################
+
+# a)	Check outliers for variables “a_dep_score” and “cg_bpm”
+# I use Bonferonni p-value to check whether data has extreme outliers.
+boxplot(data_dep_scr_case_followup$a_dep_score)
+qqnorm(data_dep_scr_case_followup$a_dep_score, main="QQ plot for a_dep_score"); qqline(data_dep_scr_case_followup$a_dep_score, col=2)
+qqnorm(cg_bpm, main="QQ plot for cg_bpm"); qqline(cg_bpm, col=2)
+hist(data_dep_scr_case_followup$a_dep_score, main="Histogram of a_dep_score")
+hist(cg_bpm, main="Histogram of cg_bpm")
+
+
+
+# Wilcoxon Matched Pairs Test for Intrusive Grief Thoughts Scale in the treatment group.
+wilcox.test(data_igts_case_baseline$base_igts, data_igts_case_followup$a_igts, paired = TRUE)
+
+
+# Wilcoxon Matched Pairs Test for complicated grief scale in the treatment group (a_icg, base_icg)
+wilcox.test(data_icg_case_baseline$base_icg, data_icg_case_followup$a_icg, paired = TRUE)
+
+
+# Wilcoxon Matched Pairs Test for Depression scale for children (base_dep_scr, a_dep_score, base_depressed, a_depressed)
+wilcox.test(data_dep_scr_case_baseline$base_dep_scr, data_dep_scr_case_followup$a_dep_score, paired = TRUE)
+# Mcnemar.test
+mcnemar.test(data_dep_scr_case_baseline$base_depressed, data_dep_scr_case_followup$a_depressed, correct = TRUE)
+
+
+
+# Wilcoxon Matched Pairs Test for Brief problem monitor (base_bpm, cg_bpm)
+wilcox.test(base_bpm, cg_bpm, paired = TRUE)
+
+
+# Wilcoxon Matched Pairs Test for Brief problem monitor - Internalizing behaviors sub-scale (base_bpm_int, cg_bpm_int)
+wilcox.test(base_bpm_int, cg_bpm_int, paired = TRUE)
+
+# Mcnemar.test for Impaired functioning due to grief
+mcnemar.test(data_difficult_case_baseline$base_difficult, data_difficult_case_followup$a_difficult, correct = TRUE)
+
+
+############################################ Part one, Step Four #################################################
+# check multicollinearity
+
+
+a_igts <- data_igts_case_followup$a_igts
+a_icg <- data_icg_case_followup$a_icg
+a_dep_score <- data_dep_scr_case_followup$a_dep_score
+cg_bpm
+cg_bpm_int
+
+a_depressed <- data_dep_scr_case_followup$a_depressed
+a_difficult <- data_difficult_case_followup$a_difficult
+
+
+panel.cor <- function(x, y, digits = 2, cex.cor, ...)
+{
+  usr <- par("usr"); on.exit(par(usr))
+  par(usr = c(0, 1, 0, 1))
+  # correlation coefficient
+  r <- cor(x, y)
+  txt <- format(c(r, 0.123456789), digits = digits)[1]
+  txt <- paste("r= ", txt, sep = "")
+  text(0.5, 0.6, txt)
+  
+  # p-value calculation
+  p <- cor.test(x, y)$p.value
+  txt2 <- format(c(p, 0.123456789), digits = digits)[1]
+  txt2 <- paste("p= ", txt2, sep = "")
+  if(p<0.01) txt2 <- paste("p= ", "<0.01", sep = "")
+  text(0.5, 0.4, txt2)
+}
+
+pairs(cbind(a_igts,a_icg, a_dep_score, cg_bpm,cg_bpm_int), upper.panel = panel.cor)
+pairs(cbind(a_igts,a_icg, a_dep_score, cg_bpm,cg_bpm_int, a_depressed, a_difficult), upper.panel = panel.cor)
+
+
+data_test <- as.matrix(cbind(a_igts, a_icg, a_dep_score, cg_bpm, cg_bpm_int, a_depressed, a_difficult))
+
+
+install.packages("PerformanceAnalytics")
+library(PerformanceAnalytics)
+chart.Correlation(data_test, histogram=TRUE, pch=19)
+chart.Correlation(data_test1, histogram=TRUE, pch=19)
+
+
+##########################  Step Four, Method one - Stepwise VIF Selection  ################
+vif_func<-function(in_frame,thresh=10,trace=T){
+  
+  require(fmsb)
+  
+  if(class(in_frame) != "data.frame") in_frame<-data.frame(in_frame)
+  
+  #get initial vif value for all comparisons of variables
+  vif_init<-NULL
+  for(val in names(in_frame)){
+    form_in<-formula(paste(val," ~ ."))
+    vif_init<-rbind(vif_init,c(val,VIF(lm(form_in,data=in_frame))))
+    
+    
+    
+  }
+  vif_max<-max(as.numeric(vif_init[,2]))
+  
+  if(vif_max < thresh){
+    if(trace==T){ #print output of each iteration
+      prmatrix(vif_init,collab=c("var","vif"),rowlab=rep("",nrow(vif_init)),quote=F)
+      cat("\n")
+      cat(paste("All variables have VIF < ", thresh,", max VIF ",round(vif_max,2), sep=""),"\n\n")
+    }
+    return(names(in_frame))
+  }
+  
+  else{
+    
+    in_dat<-in_frame
+    
+    #backwards selection of explanatory variables, stops when all VIF values are below "thresh"
+    while(vif_max >= thresh){
+      
+      vif_vals<-NULL
+      
+      for(val in names(in_dat)){
+        form_in<-formula(paste(val," ~ ."))
+        vif_add<-VIF(lm(form_in,data=in_dat))
+        vif_vals<-rbind(vif_vals,c(val,vif_add))
+      }
+      max_row<-which(vif_vals[,2] == max(as.numeric(vif_vals[,2])))[1]
+      
+      vif_max<-as.numeric(vif_vals[max_row,2])
+      
+      if(vif_max<thresh) break
+      
+      if(trace==T){ #print output of each iteration
+        prmatrix(vif_vals,collab=c("var","vif"),rowlab=rep("",nrow(vif_vals)),quote=F)
+        cat("\n")
+        cat("removed: ",vif_vals[max_row,1],vif_max,"\n\n")
+        flush.console()
+      }
+      
+      in_dat<-in_dat[,!names(in_dat) %in% vif_vals[max_row,1]]
+      
+    }
+    
+    return(names(in_dat))
+    
+    
+    
+  }
+  
+}
+vif_func(in_frame = data_test, thresh = 2, trace = T)
+
+
+
+##########################  Step Four, Method Two - PCA  ################
+
+#### Performs principal component analysis of a set of individuals described by a mixture of qualitative and quantitative
+#### variables. PCAmix includes the ordinary principal component analysis and multiple correspondence analysis.
+install.packages("FactoMineR")
+library("FactoMineR")
+devtools::install_github("kassambara/factoextra")
+library("factoextra")
+
+# we can use data set "data_test" which is created above
+
+
+fviz_screeplot(res.pca, ncp=10)
+fviz_pca_var(res.pca)
+
+head(res.pca$var$cos2)
+fviz_pca_var(res.pca, col.var="cos2") +
+  scale_color_gradient2(low="white", mid="blue", 
+                        high="red", midpoint=0.5) + theme_minimal()
+
+res.pca$var$contrib
+fviz_pca_contrib(res.pca, choice = "var", axes = 1)
+fviz_pca_contrib(res.pca, choice = "var", axes = 2)
+
+
