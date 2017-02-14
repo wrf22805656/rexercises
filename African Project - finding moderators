@@ -1,0 +1,127 @@
+##### Coping with Loss: A Family Bereavement Initiative for Adolescent Girls in the Free States, South Africa #####
+
+
+############################################ Find out suitable moderators #################################################
+### Reset the working environment
+getwd()
+setwd("C:/Users/WRF/Desktop/South Africa Plan/")
+
+### Read the raw data into R and check the dimensions
+CWL_rawdata <- read.csv("coping_with_loss.csv", header=TRUE)
+CWL_dimentions <- dim(CWL_rawdata)
+print(CWL_dimentions)  # we can see that totally 774 rows and 374 columns
+
+
+##### Statistical Data Analysis #####
+# Step one: Extracting outcomes with their baseline and post-treatment ##
+variable_list <- readLines("variable_list.txt")
+
+list_names <- character(0)
+for (i in 2:length(variable_list)){
+  list_names[i-1] <- as.character(variable_list[i])
+}
+### subset of all variables, totally 63 variables ###
+Extract_all_data <-CWL_rawdata[list_names]
+Data_all_individual <- Extract_all_data[which(Extract_all_data$a_yr_since!="NA"),]    # dimensions (764, 63)
+
+
+
+###########################################  check a_difficult #####################################
+# subset data - follow up = 1
+dim(Data_all_individual)
+data2 <- head(Data_all_individual, n=50)
+write.csv(data2,file = "data3.csv")  # check the data
+
+## impute some data
+data8 <- Data_all_individual[,c("a_age_lost", "a_ma_mom", "a_ma_dad", "a_ma_gma", 	"a_ma_gpa",	"a_ma_sis",	"a_ma_bro",	"a_prolonged",	"a_caregiving",	"a_multiple","a_no_lost",	"a_double",	"a_single",	"a_any_orph")]
+data9 <- data8[seq(1, dim(data8)[1],2),]
+data10<-data9[rep(seq_len(nrow(data9)), each=2),]
+
+Data_all_individual[,c("a_age_lost", "a_ma_mom", "a_ma_dad", "a_ma_gma", 	"a_ma_gpa",	"a_ma_sis",	"a_ma_bro",	"a_prolonged",	"a_caregiving",	"a_multiple","a_no_lost",	"a_double",	"a_single",	"a_any_orph")] <- data10[,c("a_age_lost", "a_ma_mom", "a_ma_dad", "a_ma_gma", 	"a_ma_gpa",	"a_ma_sis",	"a_ma_bro",	"a_prolonged",	"a_caregiving",	"a_multiple","a_no_lost",	"a_double",	"a_single",	"a_any_orph")]
+
+####### Data_all_individual without systematically missing values  ##############
+
+# Create two new variables #
+# (1) a_relation  0 for ma,dad,  1 for grand parents, 2 for sis, bro
+Data_all_individual$a_relation[ Data_all_individual$a_ma_mom == 0 & Data_all_individual$a_ma_dad==0 & Data_all_individual$a_ma_gma == 0 & Data_all_individual$a_ma_gpa==0 & Data_all_individual$a_ma_sis == 0 & Data_all_individual$a_ma_bro==0] <-0
+Data_all_individual$a_relation[(Data_all_individual$a_ma_mom == 1 | Data_all_individual$a_ma_dad==1)] <- 1
+Data_all_individual$a_relation[(Data_all_individual$a_ma_gpa == 1 | Data_all_individual$a_ma_gma==1)] <- 2
+Data_all_individual$a_relation[(Data_all_individual$a_ma_sis == 1 | Data_all_individual$a_ma_bro==1)] <- 3
+Data_all_individual$a_relation[((Data_all_individual$a_ma_sis == 1 | Data_all_individual$a_ma_bro==1) & (Data_all_individual$a_ma_gma == 1 | Data_all_individual$a_ma_gpa==1)) |((Data_all_individual$a_ma_sis == 1 | Data_all_individual$a_ma_bro==1) & (Data_all_individual$a_ma_mom == 1 | Data_all_individual$a_ma_dad==1)) | ((Data_all_individual$a_ma_mom == 1 | Data_all_individual$a_ma_dad==1) & (Data_all_individual$a_ma_gma == 1 | Data_all_individual$a_ma_gpa==1))] <- 4 
+Data_all_individual$a_relation[(Data_all_individual$a_ma_mom == 1 | Data_all_individual$a_ma_dad==1) & (Data_all_individual$a_ma_gma == 1 | Data_all_individual$a_ma_gpa==1) & (Data_all_individual$a_ma_sis == 1 | Data_all_individual$a_ma_bro==1)] <- 5
+
+Data_all_individual$a_relation
+
+# (2) number of stressors since the loss
+Data_all_individual$Num_stressors <- rowSums(Data_all_individual[c(49:62)])
+Data_all_individual$relation <- rowSums(Data_all_individual[c(24:29)])
+
+
+#######  Data will be used ###########
+
+
+# check what variables have missing data and how many NA there.
+sapply(Data_willbeused, function(x) sum(length(which(is.na(x)))))
+colnames(Data_willbeused)[colSums(is.na(Data_willbeused))>0]
+
+# delete "a_careiver", "cg_loss", "cg_icg", "cg_igts", "a_caregiving"
+
+Data_willbeused <- Data_all_individual[c("youth_id","school_code","tx" , "completer" ,"a_yr_since","baseline","followup","base_igts","a_igts",        
+                                         "base_icg","a_icg","base_dep_scr","a_dep_score", "base_depressed", "a_depressed","base_bpm", "cg_bpm","base_bpm_int",  
+                                         "cg_bpm_int","base_difficult", "a_difficult","a_age",  "a_age_lost", "a_prolonged","a_multiple" ,"a_no_lost", "a_double", "a_single","a_any_orph",    
+                                         "cg_chronic","any_chronic","a_cg_connect","cg_dep" ,"cg_depressed",       
+                                         "a_help_loss", "a_any_verb", "a_any_phys", "a_relation","Num_stressors")]
+
+Data_willbeused$cg_chronic
+Data_willbeused$any_chronic
+table(Data_willbeused$cg_dep)
+Data_willbeused$cg_depressed
+
+
+
+########## missing data imputation ############
+library(mi)
+
+## Identify variables' class
+
+missing_data_frame_second <- missing_data.frame(Data_willbeused)
+summary(missing_data_frame_second)
+hist(missing_data_frame_second)
+image(missing_data_frame_second)
+
+##customization of the conditional model is as default, we do not need to change
+mdf_second <- change(missing_data_frame_second, y=c("base_bpm","cg_bpm","base_bpm_int","cg_bpm_int","cg_dep"), what="type", to="ordered-categorical")
+mdf_second <- change(mdf_second, y=c("cg_chronoic","any_chronic","cg_depressed"), what="type", to="binary")
+
+
+## multiple imputation 
+data_after_mi_second <- mi(mdf_second, n.iter=2, seed=1200)
+
+## diagnostic the results
+show(data_after_mi_second)
+summary(data_after_mi_second)
+
+# get complete data sets and extract the first imputed data set 
+if(!exists("imputations", env = .GlobalEnv)) {
+  imputations <- mi:::imputations # cached from example("mi-package")
+}
+complete_imputed_data_sets_second <- complete(data_after_mi_second, 3)
+data_imputed_set_second <- complete_imputed_data_sets_second[[1]]
+
+####### check there is no missing values.
+sapply(data_imputed_set_second, function(x) sum(length(which(is.na(x)))))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
