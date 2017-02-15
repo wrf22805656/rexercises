@@ -1,0 +1,179 @@
+##### Coping with Loss: A Family Bereavement Initiative for Adolescent Girls in the Free States, South Africa #####
+
+############################################ Find out table two #################################################
+
+# variable base_igts #
+data_table_one <- data_imputed_set_second[which(data_imputed_set_second$baseline==1),]
+model1 <- lm(base_igts ~ a_age, data=data_table_one)
+summary(model1)
+
+model2 <- lm(base_igts ~ a_age_lost, data=data_table_one)
+summary(model2)
+
+model3 <- lm(base_igts ~ as.numeric(a_relation), data=data_table_one)
+summary(model3)
+
+model4 <- lm(base_igts ~ a_prolonged, data=data_table_one)
+summary(model4)
+
+model5 <- lm(base_igts ~ a_multiple, data=data_table_one)
+summary(model5)
+
+model6 <- lm(base_igts ~ a_no_lost, data=data_table_one)
+summary(model6)
+
+model7 <- lm(base_igts ~ a_double, data=data_table_one)
+summary(model7)
+
+model8 <- lm(base_igts ~ a_single, data=data_table_one)
+summary(model8)
+
+model9 <- lm(base_igts ~ a_any_orph, data=data_table_one)
+summary(model9)
+
+model10 <- lm(base_igts ~ cg_chronic, data=data_table_one)
+summary(model10)
+
+model11 <- lm(base_igts ~ any_chronic, data=data_table_one)
+summary(model11)
+
+model12 <- lm(base_igts ~ a_cg_connect, data=data_table_one)
+summary(model12)
+
+model13 <- lm(base_igts ~ as.numeric(cg_dep), data=data_table_one)
+summary(model13)
+
+
+model15 <- lm(base_igts ~ cg_depressed, data=data_table_one)
+summary(model15)
+
+model16 <- lm(base_igts ~ a_help_loss, data=data_table_one)
+summary(model16)
+
+model17 <- lm(base_igts ~ a_any_verb, data=data_table_one)
+summary(model17)
+
+model18 <- lm(base_igts ~ a_any_phys, data=data_table_one)
+summary(model18)
+
+model19 <- lm(base_igts ~ Num_stressors, data=data_table_one)
+summary(model19)
+
+
+# variable base_icg #
+data_table_one <- data_imputed_set_second[which(data_imputed_set_second$baseline==1),]
+model1 <- lm(base_icg ~ a_age, data=data_table_one)
+summary(model1)
+
+model2 <- lm(base_icg ~ a_age_lost, data=data_table_one)
+summary(model2)
+
+model3 <- lm(base_icg ~ as.numeric(a_relation), data=data_table_one)
+summary(model3)
+
+model4 <- lm(base_icg ~ a_prolonged, data=data_table_one)
+summary(model4)
+
+model5 <- lm(base_icg ~ a_multiple, data=data_table_one)
+summary(model5)
+
+model6 <- lm(base_icg ~ a_no_lost, data=data_table_one)
+summary(model6)
+
+model7 <- lm(base_icg ~ a_double, data=data_table_one)
+summary(model7)
+
+model8 <- lm(base_icg ~ a_single, data=data_table_one)
+summary(model8)
+
+model9 <- lm(base_icg ~ a_any_orph, data=data_table_one)
+summary(model9)
+
+model10 <- lm(base_icg ~ cg_chronic, data=data_table_one)
+summary(model10)
+
+model11 <- lm(base_icg ~ any_chronic, data=data_table_one)
+summary(model11)
+
+model12 <- lm(base_icg ~ a_cg_connect, data=data_table_one)
+summary(model12)
+
+model13 <- lm(base_icg ~ as.numeric(cg_dep), data=data_table_one)
+summary(model13)
+
+
+model15 <- lm(base_icg ~ cg_depressed, data=data_table_one)
+summary(model15)
+
+model16 <- lm(base_icg ~ a_help_loss, data=data_table_one)
+summary(model16)
+
+model17 <- lm(base_icg ~ a_any_verb, data=data_table_one)
+summary(model17)
+
+model18 <- lm(base_icg ~ a_any_phys, data=data_table_one)
+summary(model18)
+
+model19 <- lm(base_icg ~ Num_stressors, data=data_table_one)
+summary(model19)
+
+
+
+
+
+# variable base_bpm_int #
+data_table_one <- data_imputed_set_second[which(data_imputed_set_second$baseline==1),]
+model1 <- lm(as.numeric(base_bpm_int) ~ a_age, data=data_table_one)
+summary(model1)
+
+model2 <- lm(as.numeric(base_bpm_int) ~ a_age_lost, data=data_table_one)
+summary(model2)
+
+model3 <- lm(as.numeric(base_bpm_int) ~ as.numeric(a_relation), data=data_table_one)
+summary(model3)
+
+model4 <- lm(as.numeric(base_bpm_int) ~ a_prolonged, data=data_table_one)
+summary(model4)
+
+model5 <- lm(as.numeric(base_bpm_int) ~ a_multiple, data=data_table_one)
+summary(model5)
+
+model6 <- lm(as.numeric(base_bpm_int) ~ a_no_lost, data=data_table_one)
+summary(model6)
+
+model7 <- lm(as.numeric(base_bpm_int) ~ a_double, data=data_table_one)
+summary(model7)
+
+model8 <- lm(as.numeric(base_bpm_int) ~ a_single, data=data_table_one)
+summary(model8)
+
+model9 <- lm(as.numeric(base_bpm_int) ~ a_any_orph, data=data_table_one)
+summary(model9)
+
+model10 <- lm(as.numeric(base_bpm_int) ~ cg_chronic, data=data_table_one)
+summary(model10)
+
+model11 <- lm(as.numeric(base_bpm_int) ~ any_chronic, data=data_table_one)
+summary(model11)
+
+model12 <- lm(as.numeric(base_bpm_int) ~ a_cg_connect, data=data_table_one)
+summary(model12)
+
+model13 <- lm(as.numeric(base_bpm_int) ~ as.numeric(cg_dep), data=data_table_one)
+summary(model13)
+
+
+model15 <- lm(as.numeric(base_bpm_int) ~ cg_depressed, data=data_table_one)
+summary(model15)
+
+model16 <- lm(as.numeric(base_bpm_int) ~ a_help_loss, data=data_table_one)
+summary(model16)
+
+model17 <- lm(as.numeric(base_bpm_int) ~ a_any_verb, data=data_table_one)
+summary(model17)
+
+model18 <- lm(as.numeric(base_bpm_int) ~ a_any_phys, data=data_table_one)
+summary(model18)
+
+model19 <- lm(as.numeric(base_bpm_int) ~ Num_stressors, data=data_table_one)
+summary(model19)
