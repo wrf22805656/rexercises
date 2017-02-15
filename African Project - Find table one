@@ -1,0 +1,476 @@
+##### Coping with Loss: A Family Bereavement Initiative for Adolescent Girls in the Free States, South Africa #####
+
+
+############################################ Find out suitable moderators #################################################
+### Reset the working environment
+getwd()
+setwd("C:/Users/WRF/Desktop/South Africa Plan/")
+
+### Read the raw data into R and check the dimensions
+CWL_rawdata <- read.csv("coping_with_loss.csv", header=TRUE)
+CWL_dimentions <- dim(CWL_rawdata)
+print(CWL_dimentions)  # we can see that totally 774 rows and 374 columns
+
+
+##### Statistical Data Analysis #####
+# Step one: Extracting outcomes with their baseline and post-treatment ##
+variable_list <- readLines("variable_list.txt")
+
+list_names <- character(0)
+for (i in 2:length(variable_list)){
+  list_names[i-1] <- as.character(variable_list[i])
+}
+### subset of all variables, totally 63 variables ###
+Extract_all_data <-CWL_rawdata[list_names]
+Data_all_individual <- Extract_all_data[which(Extract_all_data$a_yr_since!="NA"),]    # dimensions (764, 63)
+
+
+
+###########################################  check a_difficult #####################################
+# subset data - follow up = 1
+dim(Data_all_individual)
+data2 <- head(Data_all_individual, n=50)
+write.csv(data2,file = "data3.csv")  # check the data
+
+## impute some data
+data8 <- Data_all_individual[,c("a_age_lost", "a_ma_mom", "a_ma_dad", "a_ma_gma", 	"a_ma_gpa",	"a_ma_sis",	"a_ma_bro",	"a_prolonged",	"a_caregiving",	"a_multiple","a_no_lost",	"a_double",	"a_single",	"a_any_orph")]
+data9 <- data8[seq(1, dim(data8)[1],2),]
+data10<-data9[rep(seq_len(nrow(data9)), each=2),]
+
+Data_all_individual[,c("a_age_lost", "a_ma_mom", "a_ma_dad", "a_ma_gma", 	"a_ma_gpa",	"a_ma_sis",	"a_ma_bro",	"a_prolonged",	"a_caregiving",	"a_multiple","a_no_lost",	"a_double",	"a_single",	"a_any_orph")] <- data10[,c("a_age_lost", "a_ma_mom", "a_ma_dad", "a_ma_gma", 	"a_ma_gpa",	"a_ma_sis",	"a_ma_bro",	"a_prolonged",	"a_caregiving",	"a_multiple","a_no_lost",	"a_double",	"a_single",	"a_any_orph")]
+
+####### Data_all_individual without systematically missing values  ##############
+
+# Create two new variables #
+# (1) a_relation  0 for ma,dad,  1 for grand parents, 2 for sis, bro
+Data_all_individual$a_relation[ Data_all_individual$a_ma_mom == 0 & Data_all_individual$a_ma_dad==0 & Data_all_individual$a_ma_gma == 0 & Data_all_individual$a_ma_gpa==0 & Data_all_individual$a_ma_sis == 0 & Data_all_individual$a_ma_bro==0] <-0
+Data_all_individual$a_relation[(Data_all_individual$a_ma_mom == 1 | Data_all_individual$a_ma_dad==1)] <- 1
+Data_all_individual$a_relation[(Data_all_individual$a_ma_gpa == 1 | Data_all_individual$a_ma_gma==1)] <- 2
+Data_all_individual$a_relation[(Data_all_individual$a_ma_sis == 1 | Data_all_individual$a_ma_bro==1)] <- 3
+Data_all_individual$a_relation[((Data_all_individual$a_ma_sis == 1 | Data_all_individual$a_ma_bro==1) & (Data_all_individual$a_ma_gma == 1 | Data_all_individual$a_ma_gpa==1)) |((Data_all_individual$a_ma_sis == 1 | Data_all_individual$a_ma_bro==1) & (Data_all_individual$a_ma_mom == 1 | Data_all_individual$a_ma_dad==1)) | ((Data_all_individual$a_ma_mom == 1 | Data_all_individual$a_ma_dad==1) & (Data_all_individual$a_ma_gma == 1 | Data_all_individual$a_ma_gpa==1))] <- 4 
+Data_all_individual$a_relation[(Data_all_individual$a_ma_mom == 1 | Data_all_individual$a_ma_dad==1) & (Data_all_individual$a_ma_gma == 1 | Data_all_individual$a_ma_gpa==1) & (Data_all_individual$a_ma_sis == 1 | Data_all_individual$a_ma_bro==1)] <- 5
+
+Data_all_individual$a_relation
+
+# (2) number of stressors since the loss
+Data_all_individual$Num_stressors <- rowSums(Data_all_individual[c(49:62)])
+Data_all_individual$relation <- rowSums(Data_all_individual[c(24:29)])
+
+
+#######  Data will be used ###########
+
+
+# check what variables have missing data and how many NA there.
+sapply(Data_willbeused, function(x) sum(length(which(is.na(x)))))
+colnames(Data_willbeused)[colSums(is.na(Data_willbeused))>0]
+
+# delete "a_careiver", "cg_loss", "cg_icg", "cg_igts", "a_caregiving"
+
+############# recode for a_igts, a_icg and cg_bpm_int   ############
+Data_all_individual$a_igts_cat[Data_all_individual$a_igts >= 1 & Data_all_individual$a_igts< 2] <- 1
+Data_all_individual$a_igts_cat[Data_all_individual$a_igts >= 2 & Data_all_individual$a_igts< 3] <- 2
+Data_all_individual$a_igts_cat[Data_all_individual$a_igts >= 3 & Data_all_individual$a_igts< 4] <- 3
+Data_all_individual$a_igts_cat[Data_all_individual$a_igts >= 4 & Data_all_individual$a_igts< 5] <- 4
+
+
+Data_all_individual$a_icg_cat[Data_all_individual$a_icg >= 6 & Data_all_individual$a_icg< 12] <- 1
+Data_all_individual$a_icg_cat[Data_all_individual$a_icg >= 12 & Data_all_individual$a_icg< 18] <- 2
+Data_all_individual$a_icg_cat[Data_all_individual$a_icg >= 18 & Data_all_individual$a_icg< 24] <- 3
+Data_all_individual$a_icg_cat[Data_all_individual$a_icg >= 24 & Data_all_individual$a_icg<= 30] <- 4
+
+
+Data_all_individual$cg_bpm_int_cat[Data_all_individual$cg_bpm_int >= 0 & Data_all_individual$cg_bpm_int <3] <- 1
+Data_all_individual$cg_bpm_int_cat[Data_all_individual$cg_bpm_int >= 3 & Data_all_individual$cg_bpm_int <6] <- 2
+Data_all_individual$cg_bpm_int_cat[Data_all_individual$cg_bpm_int >= 6 & Data_all_individual$cg_bpm_int <9] <- 3
+Data_all_individual$cg_bpm_int_cat[Data_all_individual$cg_bpm_int >= 9 & Data_all_individual$cg_bpm_int <=12] <- 4
+
+
+############# recode for base_igts, base_icg and base_bpm_int   ############
+Data_all_individual$base_igts_cat[Data_all_individual$base_igts >= 1 & Data_all_individual$base_igts< 2] <- 1
+Data_all_individual$base_igts_cat[Data_all_individual$base_igts >= 2 & Data_all_individual$base_igts< 3] <- 2
+Data_all_individual$base_igts_cat[Data_all_individual$base_igts >= 3 & Data_all_individual$base_igts< 4] <- 3
+Data_all_individual$base_igts_cat[Data_all_individual$base_igts >= 4 & Data_all_individual$base_igts< 5] <- 4
+
+
+Data_all_individual$base_icg_cat[Data_all_individual$base_icg >= 6 & Data_all_individual$base_icg< 12] <- 1
+Data_all_individual$base_icg_cat[Data_all_individual$base_icg >= 12 & Data_all_individual$base_icg< 18] <- 2
+Data_all_individual$base_icg_cat[Data_all_individual$base_icg >= 18 & Data_all_individual$base_icg< 24] <- 3
+Data_all_individual$base_icg_cat[Data_all_individual$base_icg >= 24 & Data_all_individual$base_icg<= 30] <- 4
+
+
+Data_all_individual$base_bpm_int_cat[Data_all_individual$base_bpm_int >= 0 & Data_all_individual$base_bpm_int <3] <- 1
+Data_all_individual$base_bpm_int_cat[Data_all_individual$base_bpm_int >= 3 & Data_all_individual$base_bpm_int <6] <- 2
+Data_all_individual$base_bpm_int_cat[Data_all_individual$base_bpm_int >= 6 & Data_all_individual$base_bpm_int <9] <- 3
+Data_all_individual$base_bpm_int_cat[Data_all_individual$base_bpm_int >= 9 & Data_all_individual$base_bpm_int <=12] <- 4
+
+
+
+Data_willbeused <- Data_all_individual[c("youth_id","school_code","tx" , "completer" ,"a_yr_since","baseline","followup","base_igts","a_igts",        
+                                         "base_icg","a_icg","base_dep_scr","a_dep_score", "base_depressed", "a_depressed","base_bpm", "cg_bpm","base_bpm_int",  
+                                         "cg_bpm_int","base_difficult", "a_difficult","a_age",  "a_age_lost", "a_prolonged","a_multiple" ,"a_no_lost", "a_double", "a_single","a_any_orph",    
+                                         "cg_chronic","any_chronic","a_cg_connect","cg_dep" ,"cg_depressed", "a_icg_cat", "a_igts_cat","base_igts_cat","base_icg_cat","base_bpm_int_cat",      
+                                         "a_help_loss", "a_any_verb", "a_any_phys", "a_relation","Num_stressors", "cg_bpm_int_cat")]
+
+Data_willbeused$base_igts_cat <- as.factor(Data_willbeused$base_igts_cat)
+Data_willbeused$base_icg_cat <- as.factor(Data_willbeused$base_icg_cat)
+Data_willbeused$base_bpm_int_cat <- as.factor(Data_willbeused$base_bpm_int_cat)
+
+Data_willbeused$a_igts_cat <- as.factor(Data_willbeused$a_igts_cat)
+Data_willbeused$a_icg_cat <- as.factor(Data_willbeused$a_icg_cat)
+Data_willbeused$a_bpm_int_cat <- as.factor(Data_willbeused$a_bpm_int_cat)
+
+Data_willbeused$tx <- as.factor(Data_willbeused$tx)
+Data_willbeused$a_depressed <- as.factor(Data_willbeused$a_depressed)
+Data_willbeused$base_depressed <- as.factor(Data_willbeused$base_depressed)
+Data_willbeused$a_difficult <- as.factor(Data_willbeused$a_difficult)
+Data_willbeused$base_difficult <- as.factor(Data_willbeused$base_difficult)
+
+
+
+
+########## missing data imputation ############
+library(mi)
+
+## Identify variables' class
+
+missing_data_frame_second <- missing_data.frame(Data_willbeused)
+summary(missing_data_frame_second)
+hist(missing_data_frame_second)
+image(missing_data_frame_second)
+
+##customization of the conditional model is as default, we do not need to change
+mdf_second <- change(missing_data_frame_second, y=c("base_bpm","cg_bpm","base_bpm_int","cg_bpm_int","cg_dep"), what="type", to="ordered-categorical")
+
+
+
+## multiple imputation 
+data_after_mi_second <- mi(mdf_second, n.iter=3, seed=1200)
+
+## diagnostic the results
+show(data_after_mi_second)
+summary(data_after_mi_second)
+
+# get complete data sets and extract the first imputed data set 
+if(!exists("imputations", env = .GlobalEnv)) {
+  imputations <- mi:::imputations # cached from example("mi-package")
+}
+complete_imputed_data_sets_second <- complete(data_after_mi_second, 3)
+data_imputed_set_second <- complete_imputed_data_sets_second[[1]]
+
+####### check there is no missing values.
+sapply(data_imputed_set_second, function(x) sum(length(which(is.na(x)))))
+
+
+
+
+############################################## Subgroup data Analysis ############################################
+
+# regression test every single moderator
+# ordinal logistic regression
+install.packages("foreign")
+install.packages("ggplot2")
+install.packages("MASS")
+install.packages("Hmisc")
+install.packages("reshape2")
+library(foreign)
+library(ggplot2)
+library(MASS)
+library(Hmisc)
+library(reshape2)
+install.packages("AER")
+library(AER)
+##################################### Table one ####################################
+# variable base_igts_cat #
+data_table_one <- data_imputed_set_second[which(data_imputed_set_second$baseline==1),]
+model1 <- polr(base_igts_cat ~ a_age, data=data_table_one, Hess=TRUE)
+coeftest(model1)
+
+model2 <- polr(base_igts_cat ~ a_age_lost, data=data_table_one, Hess=TRUE)
+coeftest(model2)
+
+model3 <- polr(base_igts_cat ~ as.numeric(a_relation), data=data_table_one, Hess=TRUE)
+coeftest(model3)
+
+model4 <- polr(base_igts_cat ~ a_prolonged, data=data_table_one, Hess=TRUE)
+coeftest(model4)
+
+model5 <- polr(base_igts_cat ~ a_multiple, data=data_table_one, Hess=TRUE)
+coeftest(model5)
+
+model6 <- polr(base_igts_cat ~ a_no_lost, data=data_table_one, Hess=TRUE)
+coeftest(model6)
+
+model7 <- polr(base_igts_cat ~ a_double, data=data_table_one, Hess=TRUE)
+coeftest(model7)
+
+model8 <- polr(base_igts_cat ~ a_single, data=data_table_one, Hess=TRUE)
+coeftest(model8)
+
+model9 <- polr(base_igts_cat ~ a_any_orph, data=data_table_one, Hess=TRUE)
+coeftest(model9)
+
+model10 <- polr(base_igts_cat ~ cg_chronic, data=data_table_one, Hess=TRUE)
+coeftest(model10)
+
+model11 <- polr(base_igts_cat ~ any_chronic, data=data_table_one, Hess=TRUE)
+coeftest(model11)
+
+model12 <- polr(base_igts_cat ~ a_cg_connect, data=data_table_one, Hess=TRUE)
+coeftest(model12)
+
+model13 <- polr(base_igts_cat ~ as.numeric(cg_dep), data=data_table_one, Hess=TRUE)
+coeftest(model13)
+
+model14 <- polr(base_igts_cat ~ cg_dep, data=data_table_one, Hess=TRUE)
+coeftest(model14)
+
+model15 <- polr(base_igts_cat ~ cg_depressed, data=data_table_one, Hess=TRUE)
+coeftest(model15)
+
+model16 <- polr(base_igts_cat ~ a_help_loss, data=data_table_one, Hess=TRUE)
+coeftest(model16)
+
+model17 <- polr(base_igts_cat ~ a_any_verb, data=data_table_one, Hess=TRUE)
+coeftest(model17)
+
+model18 <- polr(base_igts_cat ~ a_any_phys, data=data_table_one, Hess=TRUE)
+coeftest(model18)
+
+model19 <- polr(base_igts_cat ~ Num_stressors, data=data_table_one, Hess=TRUE)
+coeftest(model19)
+
+
+# variable base_icg_cat #
+data_table_one <- data_imputed_set_second[which(data_imputed_set_second$baseline==1),]
+model1 <- polr(base_icg_cat ~ a_age, data=data_table_one, Hess=TRUE)
+coeftest(model1)
+
+model2 <- polr(base_icg_cat ~ a_age_lost, data=data_table_one, Hess=TRUE)
+coeftest(model2)
+
+model3 <- polr(base_icg_cat ~ as.numeric(a_relation), data=data_table_one, Hess=TRUE)
+coeftest(model3)
+
+model4 <- polr(base_icg_cat ~ a_prolonged, data=data_table_one, Hess=TRUE)
+coeftest(model4)
+
+model5 <- polr(base_icg_cat ~ a_multiple, data=data_table_one, Hess=TRUE)
+coeftest(model5)
+
+model6 <- polr(base_icg_cat ~ a_no_lost, data=data_table_one, Hess=TRUE)
+coeftest(model6)
+
+model7 <- polr(base_icg_cat ~ a_double, data=data_table_one, Hess=TRUE)
+coeftest(model7)
+
+model8 <- polr(base_icg_cat ~ a_single, data=data_table_one, Hess=TRUE)
+coeftest(model8)
+
+model9 <- polr(base_icg_cat ~ a_any_orph, data=data_table_one, Hess=TRUE)
+coeftest(model9)
+
+model10 <- polr(base_icg_cat ~ cg_chronic, data=data_table_one, Hess=TRUE)
+coeftest(model10)
+
+model11 <- polr(base_icg_cat ~ any_chronic, data=data_table_one, Hess=TRUE)
+coeftest(model11)
+
+model12 <- polr(base_icg_cat ~ a_cg_connect, data=data_table_one, Hess=TRUE)
+coeftest(model12)
+
+model13 <- polr(base_igts_cat ~ as.numeric(cg_dep), data=data_table_one, Hess=TRUE)
+coeftest(model13)
+
+model15 <- polr(base_icg_cat ~ cg_depressed, data=data_table_one, Hess=TRUE)
+coeftest(model15)
+
+model16 <- polr(base_icg_cat ~ a_help_loss, data=data_table_one, Hess=TRUE)
+coeftest(model16)
+
+model17 <- polr(base_icg_cat ~ a_any_verb, data=data_table_one, Hess=TRUE)
+coeftest(model17)
+
+model18 <- polr(base_icg_cat ~ a_any_phys, data=data_table_one, Hess=TRUE)
+coeftest(model18)
+
+model19 <- polr(base_icg_cat ~ Num_stressors, data=data_table_one, Hess=TRUE)
+coeftest(model19)
+
+
+
+
+
+# variable base_bpm_int_cat #
+data_table_one <- data_imputed_set_second[which(data_imputed_set_second$baseline==1),]
+model1 <- polr(base_bpm_int_cat ~ a_age, data=data_table_one, Hess=TRUE)
+coeftest(model1)
+
+model2 <- polr(base_bpm_int_cat ~ a_age_lost, data=data_table_one, Hess=TRUE)
+coeftest(model2)
+
+model3 <- polr(base_bpm_int_cat ~ as.numeric(a_relation), data=data_table_one, Hess=TRUE)
+coeftest(model3)
+
+model4 <- polr(base_bpm_int_cat ~ a_prolonged, data=data_table_one, Hess=TRUE)
+coeftest(model4)
+
+model5 <- polr(base_bpm_int_cat ~ a_multiple, data=data_table_one, Hess=TRUE)
+coeftest(model5)
+
+model6 <- polr(base_bpm_int_cat ~ a_no_lost, data=data_table_one, Hess=TRUE)
+coeftest(model6)
+
+model7 <- polr(base_bpm_int_cat ~ a_double, data=data_table_one, Hess=TRUE)
+coeftest(model7)
+
+model8 <- polr(base_bpm_int_cat ~ a_single, data=data_table_one, Hess=TRUE)
+coeftest(model8)
+
+model9 <- polr(base_bpm_int_cat ~ a_any_orph, data=data_table_one, Hess=TRUE)
+coeftest(model9)
+
+model10 <- polr(base_bpm_int_cat ~ cg_chronic, data=data_table_one, Hess=TRUE)
+coeftest(model10)
+
+model11 <- polr(base_bpm_int_cat ~ any_chronic, data=data_table_one, Hess=TRUE)
+coeftest(model11)
+
+model12 <- polr(base_bpm_int_cat ~ a_cg_connect, data=data_table_one, Hess=TRUE)
+coeftest(model12)
+
+model13 <- polr(base_bpm_int_cat ~ as.numeric(cg_dep), data=data_table_one, Hess=TRUE)
+coeftest(model13)
+
+model15 <- polr(base_bpm_int_cat ~ cg_depressed, data=data_table_one, Hess=TRUE)
+coeftest(model15)
+
+model16 <- polr(base_bpm_int_cat ~ a_help_loss, data=data_table_one, Hess=TRUE)
+coeftest(model16)
+
+model17 <- polr(base_bpm_int_cat ~ a_any_verb, data=data_table_one, Hess=TRUE)
+coeftest(model17)
+
+model18 <- polr(base_bpm_int_cat ~ a_any_phys, data=data_table_one, Hess=TRUE)
+coeftest(model18)
+
+model19 <- polr(base_bpm_int_cat ~ Num_stressors, data=data_table_one, Hess=TRUE)
+coeftest(model19)
+
+
+
+
+# variable base_depressed #
+model1 <- glm(base_depressed ~ a_age, data=data_table_one, family="binomial")
+summary(model1)
+
+model2 <- glm(base_depressed ~ a_age_lost, data=data_table_one, family="binomial")
+summary(model2)
+
+model3 <- glm(base_depressed ~ as.numeric(a_relation), data=data_table_one, family="binomial")
+summary(model3)
+
+model4 <- glm(base_depressed ~ a_prolonged, data=data_table_one, family="binomial")
+summary(model4)
+
+model5 <- glm(base_depressed ~ a_multiple, data=data_table_one, family="binomial")
+summary(model5)
+
+model6 <- glm(base_depressed ~ a_no_lost, data=data_table_one, family="binomial")
+summary(model6)
+
+model7 <- glm(base_depressed ~ a_double, data=data_table_one, family="binomial")
+summary(model7)
+
+model8 <- glm(base_depressed ~ a_single, data=data_table_one, family="binomial")
+summary(model8)
+
+model9 <- glm(base_depressed ~ a_any_orph, data=data_table_one, family="binomial")
+summary(model9)
+
+model10 <- glm(base_depressed ~ cg_chronic, data=data_table_one, family="binomial")
+summary(model10)
+
+model11 <- glm(base_depressed ~ any_chronic, data=data_table_one, family="binomial")
+summary(model11)
+
+model12 <- glm(base_depressed ~ a_cg_connect, data=data_table_one, family="binomial")
+summary(model12)
+
+model13 <- glm(base_depressed ~ as.numeric(cg_dep), data=data_table_one, family="binomial")
+summary(model13)
+
+model14 <- glm(base_depressed ~ cg_depressed, data=data_table_one, family="binomial")
+summary(model14)
+
+model15 <- glm(base_depressed ~ a_help_loss, data=data_table_one, family="binomial")
+summary(model15)
+
+model16 <- glm(base_depressed ~ a_any_verb, data=data_table_one, family="binomial")
+summary(model16)
+
+model17 <- glm(base_depressed ~ a_any_phys, data=data_table_one, family="binomial")
+summary(model17)
+
+model18 <- glm(base_depressed ~ Num_stressors, data=data_table_one, family="binomial")
+summary(model18)
+
+
+
+
+
+
+# variable base_difficult #
+model1 <- glm(base_difficult ~ a_age, data=data_table_one, family="binomial")
+summary(model1)
+
+model2 <- glm(base_difficult ~ a_age_lost, data=data_table_one, family="binomial")
+summary(model2)
+
+model3 <- glm(base_difficult ~ as.numeric(a_relation), data=data_table_one, family="binomial")
+summary(model3)
+
+model4 <- glm(base_difficult ~ a_prolonged, data=data_table_one, family="binomial")
+summary(model4)
+
+model5 <- glm(base_difficult ~ a_multiple, data=data_table_one, family="binomial")
+summary(model5)
+
+model6 <- glm(base_difficult ~ a_no_lost, data=data_table_one, family="binomial")
+summary(model6)
+
+model7 <- glm(base_difficult ~ a_double, data=data_table_one, family="binomial")
+summary(model7)
+
+model8 <- glm(base_difficult ~ a_single, data=data_table_one, family="binomial")
+summary(model8)
+
+model9 <- glm(base_difficult ~ a_any_orph, data=data_table_one, family="binomial")
+summary(model9)
+
+model10 <- glm(base_difficult ~ cg_chronic, data=data_table_one, family="binomial")
+summary(model10)
+
+model11 <- glm(base_difficult ~ any_chronic, data=data_table_one, family="binomial")
+summary(model11)
+
+model12 <- glm(base_difficult ~ a_cg_connect, data=data_table_one, family="binomial")
+summary(model12)
+
+model13 <- glm(base_difficult ~ as.numeric(cg_dep), data=data_table_one, family="binomial")
+summary(model13)
+
+model14 <- glm(base_difficult ~ cg_depressed, data=data_table_one, family="binomial")
+summary(model14)
+
+model15 <- glm(base_difficult ~ a_help_loss, data=data_table_one, family="binomial")
+summary(model15)
+
+model16 <- glm(base_difficult ~ a_any_verb, data=data_table_one, family="binomial")
+summary(model16)
+
+model17 <- glm(base_difficult ~ a_any_phys, data=data_table_one, family="binomial")
+summary(model17)
+
+model18 <- glm(base_difficult ~ Num_stressors, data=data_table_one, family="binomial")
+summary(model18)
+
