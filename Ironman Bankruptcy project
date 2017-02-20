@@ -1,0 +1,122 @@
+### Bankruptcy Project ### 
+
+### Reset the working environment
+getwd()
+setwd("C:/Users/WRF/Desktop/Bankruptcy/")
+
+##################################  Below data only based on PERMNO Number (Center for Research In Security Prices )##########################
+# Load raw data into R #
+Rawdata <- read.csv("delist_information.csv",header=TRUE)
+dim(Rawdata)  # we can see that the dimension of raw data is (31628,9)
+
+# Select stocks only in the Oil and Gas field ##
+Gas_n_Oil <- Rawdata[which(Rawdata$HSICIG %in% c(131,132,138,291)),]   #dim (1402,9)
+# write.csv(subdata_1, file="all_oil_n_gas_10to16.csv")
+
+
+# Check how many stocks are on the delist for some reasons
+Gas_n_Oil_NA <- Gas_n_Oil[which(Gas_n_Oil$DLSTCD!="NA"),]  # dim(331,9) - delisted for some reason.
+
+#
+# symbol_n_names <- read.csv("CCM_Annual2015.csv", header=TRUE)
+# Seven_variables_merge <- symbol_n_names_second <- symbol_n_names[names(symbol_n_names) %in% c("GVKEY","TIC","LPERMNO","SIC","BUSDESC","CONML","FIC")]
+# write.csv(Seven_variables_merge, file="Seven_variables_merge.csv")
+
+
+
+##################################  Below data only based on GVKEY Number (COMPUSTAT ID)##########################
+
+subdata_2 <- read.csv("Seven_variables_merge.csv", header=TRUE)  
+dim(subdata_2)  # (242395,8)
+
+Uniquedata <- subdata_2[with(subdata_2,order(LPERMNO)),]
+
+Unique_data <- Uniquedata[(!duplicated(Uniquedata$LPERMNO)),]
+# dim is (24553,8)
+
+
+Rawdata_Unique <- Rawdata[with(Rawdata,order(PERMNO)),]
+RawdataUnique_data <- Rawdata_Unique[(!duplicated(Rawdata_Unique$PERMNO)),]
+# dim (31628)
+
+
+######################## MERGE (COMPUSTAT ID and PERMNO) #########################
+
+merged.data.all <- merge(subdata_1,Unique_data, by.x="PERMNO", by.y="LPERMNO", all=FALSE)  # dim ()
+merged_only_USA_n_CAN <- merged.data.all[which(merged.data.all$FIC %in% c("USA","CAN")),]
+write.csv(merged.data.all, file = "merged.data.all.csv")
+
+
+
+
+
+
+######################## Only Read stock name and PERMNO ###################
+stocknames <- read.csv("stocknames.csv", header=TRUE)
+colnames(stocknames)
+PERMNO_TIC <- stocknames[c("PERMNO","NAMEDT","NAMEENDDT","TICKER","COMNAM")]  # dim (58957,5)
+
+########### MERGE Gas_n_Oil and PERMNO_TIC ########
+merge_gasoil_n_PERMNO_TIC <- merge(Gas_n_Oil,PERMNO_TIC, by="PERMNO", all=FALSE)  # dim (2818, 13)
+
+# Write a code only pick last row of a specific PERMNO ##
+PERMNO_TOTAL <- unique(merge_gasoil_n_PERMNO_TIC$PERMNO)  
+PERMNO_length <- length(PERMNO_TOTAL)             # length (1402)
+
+last <- c()
+
+for (i in 1:PERMNO_length){
+  temp<-subset(merge_gasoil_n_PERMNO_TIC, PERMNO==PERMNO_TOTAL[i])
+  if (dim(temp)[1] > 1) {
+    last.temp<-temp[dim(temp)[1],]
+  }
+  else {
+    last.temp<-temp
+  }
+  last<-rbind(last, last.temp)
+}
+
+Final_data <- last   # dim Final_data (1402,13)
+write.csv(Final_data,file="Final_data.csv")
+
+########### Subset those stocks still alive after 20100101
+Oil_Gas_alive_after20100101 <- Final_data[which(Final_data$NAMEENDDT >= 20100101),]  # dim(250,13)
+write.csv(Oil_Gas_alive_after20100101, file="Oil_Gas_alive_after20100101.csv")
+
+NO_FUND_TRUST_COMPANY <- Oil_Gas_alive_after20100101[!grepl("FUND",Oil_Gas_alive_after20100101$COMNAM),]  #dim(250,13)
+NO_FUND_TRUST_COMPANY <- NO_FUND_TRUST_COMPANY[!grepl("TRUST",NO_FUND_TRUST_COMPANY$COMNAM),] #dim (234,13)
+
+
+
+sapply(NO_FUND_TRUST_COMPANY, function(x) sum(length(which(is.na(x))))) ### iT seems no missing data, but actually we have two ###
+
+## check by look into the data, ESTE, ENSV were added into data set ##
+
+#########  Subset stocks with Ticker ###########
+NO_FUND_TRUST_COMPANY$DEAD[NO_FUND_TRUST_COMPANY$DLSTDT==20161230] <- 0
+NO_FUND_TRUST_COMPANY$DEAD[NO_FUND_TRUST_COMPANY$DLSTDT!=20161230] <- 1
+dim(NO_FUND_TRUST_COMPANY)   # dim (234,14)
+write.csv(NO_FUND_TRUST_COMPANY, file="NO_FUND_TRUST_COMPANY.csv")
+
+########################### DELETE NON- AMERICAN and US ######################
+
+COUNTRY_INFO <- Unique_data[colnames(Unique_data) %in% c("LPERMNO","FIC","BUSDESC")]
+
+
+merged.data.all_2 <- merge(NO_FUND_TRUST_COMPANY, COUNTRY_INFO, by.x="PERMNO", by.y="LPERMNO", all.x = TRUE)
+write.csv(merged.data.all_2, file="merged.data.all_2.csv")
+
+merged.data.all_2 <- merge(NO_FUND_TRUST_COMPANY, COUNTRY_INFO, by.x="PERMNO", by.y="LPERMNO", all.x = TRUE)
+dim(merged.data.all_2)  # (234,21)
+
+############## USA and CAN only  ########
+US.CAN_stocks <- merged.data.all_2[which(merged.data.all_2$FIC %in% c("USA","CAN")),]
+dim(US.CAN_stocks)  # dim(196,21)
+
+
+
+###############################################################################
+
+US.CAN_STOCK <- read.csv("US.CAN_stocks.csv",header = TRUE)
+
+table(US.CAN_STOCK$DEAD)
